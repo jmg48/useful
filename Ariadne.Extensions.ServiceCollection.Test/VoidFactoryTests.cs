@@ -7,26 +7,15 @@ namespace Ariadne.Extensions.ServiceCollection.Test
     [TestFixture]
     public class VoidFactoryTests
     {
-        [TestCase(false)]
-        [TestCase(true)]
-        public void ShouldResolveFactoryRespectingLifestyle(bool useFacility)
+        [Test]
+        public void ShouldResolveFactoryRespectingLifestyle()
         {
             // Arrange
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddSingleton<TestSingleton>();
             serviceCollection.AddTransient<TestTransient>();
 
-            if (useFacility)
-            {
-                serviceCollection.AddFactoryFacility();
-            }
-            else
-            {
-                serviceCollection.AddFactory<TestSingleton>();
-                serviceCollection.AddFactory<TestTransient>();
-            }
-
-            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
 
             // Act
             var transientFactory = serviceProvider.GetRequiredService<IFactory<TestTransient>>();
@@ -40,27 +29,16 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             serviceProvider.GetRequiredService<TestSingleton>().Should().BeSameAs(singletonFactory.New());
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void ShouldInjectFactoryRespectingLifestyle(bool useFacility)
+        [Test]
+        public void ShouldInjectFactoryRespectingLifestyle()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddSingleton<TestSingleton>();
             serviceCollection.AddTransient<TestTransient>();
 
-            if (useFacility)
-            {
-                serviceCollection.AddFactoryFacility();
-            }
-            else
-            {
-                serviceCollection.AddFactory<TestSingleton>();
-                serviceCollection.AddFactory<TestTransient>();
-            }
-
             serviceCollection.AddTransient<TestService>();
 
-            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
 
             var testService = serviceProvider.GetRequiredService<TestService>();
 
