@@ -2,12 +2,12 @@
 
 namespace Ariadne.Extensions.ServiceCollection
 {
-    internal class Factory<T1, T2, TResult> : IFactory<T1, T2, TResult>
+    internal class Factory<T1, T2, TService> : FactoryBase<TService>, IFactory<T1, T2, TService>
     {
-        private readonly Func<T1, T2, TResult> _func;
+        public Factory(IServiceProvider serviceProvider) : base(serviceProvider, new [] { typeof(T1), typeof(T2) })
+        {
+        }
 
-        public Factory(Func<T1, T2, TResult> func) => _func = func;
-
-        public TResult New(T1 arg1, T2 arg2) => this._func(arg1, arg2);
+        public TService New(T1 arg1, T2 arg2) => this.New(new object[] { arg1, arg2 });
     }
 }

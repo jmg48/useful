@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30503.244
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ariadne.Extensions.FileSystemInfo", "Ariadne.Extensions.FileSystemInfo\Ariadne.Extensions.FileSystemInfo.csproj", "{2623E644-6E6C-4F16-832C-25D3415788FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ariadne.Extensions.FileSystemInfo", "Ariadne.Extensions.FileSystemInfo\Ariadne.Extensions.FileSystemInfo.csproj", "{2623E644-6E6C-4F16-832C-25D3415788FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ariadne.Extensions.ServiceCollection", "Ariadne.Extensions.ServiceCollection\Ariadne.Extensions.ServiceCollection.csproj", "{9B35293D-404A-4903-994E-D5082BECB028}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ariadne.Extensions.ServiceCollection", "Ariadne.Extensions.ServiceCollection\Ariadne.Extensions.ServiceCollection.csproj", "{9B35293D-404A-4903-994E-D5082BECB028}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ariadne.Extensions.ServiceCollection.Test", "Ariadne.Extensions.ServiceCollection.Test\Ariadne.Extensions.ServiceCollection.Test.csproj", "{EF40A2E3-C34D-4373-B1ED-41EB9D70ED2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{9B35293D-404A-4903-994E-D5082BECB028}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B35293D-404A-4903-994E-D5082BECB028}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B35293D-404A-4903-994E-D5082BECB028}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF40A2E3-C34D-4373-B1ED-41EB9D70ED2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF40A2E3-C34D-4373-B1ED-41EB9D70ED2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF40A2E3-C34D-4373-B1ED-41EB9D70ED2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF40A2E3-C34D-4373-B1ED-41EB9D70ED2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

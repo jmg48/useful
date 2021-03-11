@@ -1,13 +1,14 @@
 ﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ariadne.Extensions.ServiceCollection
 {
-    internal class Factory<TResult> : IFactory<TResult>
+    internal class Factory<TService> : IFactory<TService>
     {
-        private readonly Func<TResult> _func;
+        private readonly IServiceProvider _serviceProvider;
 
-        public Factory(Func<TResult> func) => _func = func;
+        public Factory(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
 
-        public TResult New() => this._func();
+        public TService New() => _serviceProvider.GetRequiredService<TService>();
     }
 }
