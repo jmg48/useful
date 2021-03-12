@@ -1,10 +1,11 @@
-﻿using System;
-
-namespace Ariadne.Extensions.ServiceCollection
+﻿namespace Ariadne.Extensions.ServiceCollection
 {
+    using System;
+
     internal class Factory<T1, T2, T3, TService> : FactoryBase<TService>, IFactory<T1, T2, T3, TService>
     {
-        public Factory(IServiceProvider serviceProvider) : base(serviceProvider, new [] { typeof(T1), typeof(T2), typeof(T3) })
+        public Factory(IServiceProvider serviceProvider, ServiceMap serviceMap)
+            : base(serviceProvider, serviceMap, new[] { typeof(T1), typeof(T2), typeof(T3) })
         {
         }
 

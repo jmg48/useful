@@ -14,8 +14,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddSingleton<TestSingleton>();
             serviceCollection.AddTransient<TestTransient>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             // Act
             var transientFactory = serviceProvider.GetRequiredService<IFactory<TestTransient>>();
@@ -35,10 +35,9 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddSingleton<TestSingleton>();
             serviceCollection.AddTransient<TestTransient>();
-
             serviceCollection.AddTransient<TestService>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             var testService = serviceProvider.GetRequiredService<TestService>();
 

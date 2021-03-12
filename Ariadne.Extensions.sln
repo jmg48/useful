@@ -7,7 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ariadne.Extensions.FileSyst
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ariadne.Extensions.ServiceCollection", "Ariadne.Extensions.ServiceCollection\Ariadne.Extensions.ServiceCollection.csproj", "{9B35293D-404A-4903-994E-D5082BECB028}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ariadne.Extensions.ServiceCollection.Test", "Ariadne.Extensions.ServiceCollection.Test\Ariadne.Extensions.ServiceCollection.Test.csproj", "{EF40A2E3-C34D-4373-B1ED-41EB9D70ED2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ariadne.Extensions.ServiceCollection.Test", "Ariadne.Extensions.ServiceCollection.Test\Ariadne.Extensions.ServiceCollection.Test.csproj", "{EF40A2E3-C34D-4373-B1ED-41EB9D70ED2B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D1D1F670-6622-4243-8595-4D7B2720F653}"
+	ProjectSection(SolutionItems) = preProject
+		stylecop.ruleset = stylecop.ruleset
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

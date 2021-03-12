@@ -13,8 +13,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<string>>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             var factory = serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
@@ -27,8 +27,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<ITestInterfaceOneParam<string>, TestServiceOneParam<string>>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             var factory = serviceProvider.GetRequiredService<IFactory<string, ITestInterfaceOneParam<string>>>();
 
@@ -41,8 +41,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<string>>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             Func<IFactory<string, ITestInterfaceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, ITestInterfaceOneParam<string>>>();
 
@@ -51,12 +51,26 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
+        public void ShouldFailToResolveNonTransientLifestyle()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddScoped<TestServiceOneParam<string>>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
+
+            // ToDo: More specific exception and useful error message
+            factory.Should().Throw<NotSupportedException>();
+        }
+
+        [Test]
         public void ShouldFailToResolveInterfaceFactoryByImplementation()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<ITestInterfaceOneParam<string>, TestServiceOneParam<string>>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
@@ -69,8 +83,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<double>>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             var factory = serviceProvider.GetRequiredService<IFactory<int, TestServiceOneParam<double>>>();
 
@@ -83,8 +97,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceTwoParams>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             var factory = serviceProvider.GetRequiredService<IFactory<string, double, TestServiceTwoParams>>();
 
@@ -102,8 +116,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<ITestInterfaceTwoParams, TestServiceTwoParams>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             var factory = serviceProvider.GetRequiredService<IFactory<string, double, ITestInterfaceTwoParams>>();
 
@@ -121,8 +135,8 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceThreeParams>();
-
-            var serviceProvider = serviceCollection.BuildServiceProviderWithAbstractFactorySupport();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
             var factory = serviceProvider.GetRequiredService<IFactory<string, double, bool, TestServiceThreeParams>>();
 
