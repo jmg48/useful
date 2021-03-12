@@ -14,7 +14,7 @@
         {
             this.serviceProvider = serviceProvider;
             this.argTypes = argTypes;
-            var serviceDescriptor = serviceMap[typeof(TService)].Single();
+            var serviceDescriptor = serviceMap.TryGetValue(typeof(TService), out var value) ? value.Single() : throw new NotSupportedException();
             this.implementationType = serviceDescriptor.Lifetime == ServiceLifetime.Transient ? serviceDescriptor.ImplementationType : throw new NotSupportedException();
         }
 

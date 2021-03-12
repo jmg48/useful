@@ -65,6 +65,20 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
+        public void ShouldFailToResolveServiceAddedAfterFactoryFacility()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddFactoryFacility();
+            serviceCollection.AddTransient<TestServiceOneParam<string>>();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
+
+            // ToDo: More specific exception and useful error message
+            factory.Should().Throw<NotSupportedException>();
+        }
+
+        [Test]
         public void ShouldFailToResolveInterfaceFactoryByImplementation()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
