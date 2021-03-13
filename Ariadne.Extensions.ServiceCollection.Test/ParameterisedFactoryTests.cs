@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
@@ -9,7 +11,20 @@ namespace Ariadne.Extensions.ServiceCollection.Test
     public class ParameterisedFactoryTests
     {
         [Test]
-        public void ShouldResolveImplementationFactory()
+        public void GetRequiredService_NotRegistered_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<TestServiceTwoParams> factory = () => serviceProvider.GetRequiredService<TestServiceTwoParams>();
+
+            // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage("No service for type 'Ariadne.Extensions.ServiceCollection.Test.ParameterisedFactoryTests+TestServiceTwoParams' has been registered.");
+        }
+
+        [Test]
+        public void GetRequiredService_FactoryOfOneArgForRegisteredType_ShouldResolve()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<string>>();
@@ -23,7 +38,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void ShouldResolveInterfaceFactory()
+        public void GetRequiredService_FactoryOfOneArgForRegisteredInterface_ShouldResolve()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<ITestInterfaceOneParam<string>, TestServiceOneParam<string>>();
@@ -37,7 +52,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void ShouldFailToResolveImplementationFactoryByInterface()
+        public void GetRequiredService_FactoryOfOneArgForInterfaceOfRegisteredType_ShouldThrow()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<string>>();
@@ -46,12 +61,12 @@ namespace Ariadne.Extensions.ServiceCollection.Test
 
             Func<IFactory<string, ITestInterfaceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, ITestInterfaceOneParam<string>>>();
 
-            // ToDo: More specific exception and useful error message
-            factory.Should().Throw<Exception>();
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"No service for type '{typeof(ITestInterfaceOneParam<string>)}' has been registered.");
         }
 
         [Test]
-        public void ShouldFailToResolveNonTransientLifestyle()
+        public void GetRequiredService_FactoryOfOneArgForTypeRegisteredAsNonTransient_ShouldThrow()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddScoped<TestServiceOneParam<string>>();
@@ -60,12 +75,12 @@ namespace Ariadne.Extensions.ServiceCollection.Test
 
             Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
-            // ToDo: More specific exception and useful error message
-            factory.Should().Throw<NotSupportedException>();
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"In order to resolve a parameterised factory for type '{typeof(TestServiceOneParam<string>)}', it must be registered as Transient lifestyle.");
         }
 
         [Test]
-        public void ShouldFailToResolveServiceAddedAfterFactoryFacility()
+        public void GetRequiredService_FactoryOfOneArgForTypeRegisteredAfterFactoryFacility_ShouldThrow()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddFactoryFacility();
@@ -74,12 +89,12 @@ namespace Ariadne.Extensions.ServiceCollection.Test
 
             Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
-            // ToDo: More specific exception and useful error message
-            factory.Should().Throw<NotSupportedException>();
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"No service for type '{typeof(TestServiceOneParam<string>)}' has been registered.");
         }
 
         [Test]
-        public void ShouldFailToResolveInterfaceFactoryByImplementation()
+        public void GetRequiredService_FactoryOfOneArgForTypeOfRegisteredInterface_ShouldThrow()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<ITestInterfaceOneParam<string>, TestServiceOneParam<string>>();
@@ -88,12 +103,12 @@ namespace Ariadne.Extensions.ServiceCollection.Test
 
             Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
-            // ToDo: More specific exception and useful error message
-            factory.Should().Throw<Exception>();
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"No service for type '{typeof(TestServiceOneParam<string>)}' has been registered.");
         }
 
         [Test]
-        public void ShouldResolveFactoryWithImplicitConversion()
+        public void GetRequiredService_FactoryOfOneArgOfImplicitlyConvertableType_ShouldResolve()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<double>>();
@@ -107,7 +122,21 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void ShouldResolveFactoryOfTwoArgs()
+        public void GetRequiredService_FactoryOfOneArgOfInheritedType_ShouldResolve()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TestServiceOneParam<IEnumerable<string>>>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            var factory = serviceProvider.GetRequiredService<IFactory<string[], TestServiceOneParam<IEnumerable<string>>>>();
+
+            factory.New(new[] {"a"}).Arg.Single().Should().Be("a");
+            factory.New(new[] {"b"}).Arg.Single().Should().Be("b");
+        }
+
+        [Test]
+        public void GetRequiredService_FactoryOfTwoArgsForRegisteredType_ShouldResolve()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceTwoParams>();
@@ -126,7 +155,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void ShouldResolveFactoryOfTwoArgsByInterface()
+        public void GetRequiredService_FactoryOfTwoArgsForRegisteredInterface_ShouldResolve()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<ITestInterfaceTwoParams, TestServiceTwoParams>();
@@ -145,7 +174,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void ShouldResolveFactoryOfThreeArgs()
+        public void GetRequiredService_FactoryOfThreeArgsForRegisteredType_ShouldResolve()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceThreeParams>();

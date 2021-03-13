@@ -14,8 +14,13 @@
         {
             this.serviceProvider = serviceProvider;
             this.argTypes = argTypes;
-            var serviceDescriptor = serviceMap.TryGetValue(typeof(TService), out var value) ? value.Single() : throw new NotSupportedException();
-            this.implementationType = serviceDescriptor.Lifetime == ServiceLifetime.Transient ? serviceDescriptor.ImplementationType : throw new NotSupportedException();
+            var serviceDescriptor = serviceMap.TryGetValue(typeof(TService), out var value)
+                ? value.Single()
+                : throw new InvalidOperationException(
+                    $"No service for type '{typeof(TService)}' has been registered.");
+            this.implementationType = serviceDescriptor.Lifetime == ServiceLifetime.Transient
+                ? serviceDescriptor.ImplementationType
+                : throw new InvalidOperationException($"In order to resolve a parameterised factory for type '{typeof(TService)}', it must be registered as Transient lifestyle.");
         }
 
         protected TService New(object[] argValues)
