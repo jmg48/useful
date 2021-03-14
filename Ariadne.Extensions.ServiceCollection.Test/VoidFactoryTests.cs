@@ -10,18 +10,15 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         [Test]
         public void ShouldResolveFactoryRespectingLifestyle()
         {
-            // Arrange
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddSingleton<TestSingleton>();
             serviceCollection.AddTransient<TestTransient>();
             serviceCollection.AddFactoryFacility();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            // Act
             var transientFactory = serviceProvider.GetRequiredService<IFactory<TestTransient>>();
             var singletonFactory = serviceProvider.GetRequiredService<IFactory<TestSingleton>>();
 
-            // Assert
             transientFactory.New().Should().NotBeSameAs(transientFactory.New());
             serviceProvider.GetRequiredService<TestTransient>().Should().NotBeSameAs(transientFactory.New());
             

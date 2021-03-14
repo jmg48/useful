@@ -20,7 +20,21 @@ namespace Ariadne.Extensions.ServiceCollection.Test
 
             // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
             factory.Should().Throw<InvalidOperationException>()
-                .WithMessage("No service for type 'Ariadne.Extensions.ServiceCollection.Test.ParameterisedFactoryTests+TestServiceTwoParams' has been registered.");
+                .WithMessage($"No service for type '{typeof(TestServiceTwoParams)}' has been registered.");
+        }
+
+        [Test]
+        public void GetRequiredService_DependencyNotRegistered_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TestServiceTwoParams>();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<TestServiceTwoParams> factory = () => serviceProvider.GetRequiredService<TestServiceTwoParams>();
+
+            // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"Unable to resolve service for type '{typeof(string)}' while attempting to activate '{typeof(TestServiceTwoParams)}'.");
         }
 
         [Test]
@@ -62,7 +76,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             Func<IFactory<string, ITestInterfaceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, ITestInterfaceOneParam<string>>>();
 
             factory.Should().Throw<InvalidOperationException>()
-                .WithMessage($"No service for type '{typeof(ITestInterfaceOneParam<string>)}' has been registered.");
+                .WithMessage($"Unable to resolve service for type '{typeof(ITestInterfaceOneParam<string>)}' while attempting to activate '{typeof(IFactory<string, ITestInterfaceOneParam<string>>)}'.");
         }
 
         [Test]
@@ -76,7 +90,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
             factory.Should().Throw<InvalidOperationException>()
-                .WithMessage($"In order to resolve a parameterised factory for type '{typeof(TestServiceOneParam<string>)}', it must be registered as Transient lifestyle.");
+                .WithMessage($"In order to resolve a parameterised factory for service type '{typeof(TestServiceOneParam<string>)}', the implementation type '{typeof(TestServiceOneParam<string>)}' must be registered with Transient lifestyle.");
         }
 
         [Test]
@@ -90,7 +104,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
             factory.Should().Throw<InvalidOperationException>()
-                .WithMessage($"No service for type '{typeof(TestServiceOneParam<string>)}' has been registered.");
+                .WithMessage($"Unable to resolve service for type '{typeof(TestServiceOneParam<string>)}' while attempting to activate '{typeof(IFactory<string, TestServiceOneParam<string>>)}'.");
         }
 
         [Test]
@@ -104,25 +118,25 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             Func<IFactory<string, TestServiceOneParam<string>>> factory = () => serviceProvider.GetRequiredService<IFactory<string, TestServiceOneParam<string>>>();
 
             factory.Should().Throw<InvalidOperationException>()
-                .WithMessage($"No service for type '{typeof(TestServiceOneParam<string>)}' has been registered.");
+                .WithMessage($"Unable to resolve service for type '{typeof(TestServiceOneParam<string>)}' while attempting to activate '{typeof(IFactory<string, TestServiceOneParam<string>>)}'.");
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfOneArgOfImplicitlyConvertableType_ShouldResolve()
+        public void GetRequiredService_FactoryOfOneArgOfImplicitlyConvertibleType_ShouldThrow()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<double>>();
             serviceCollection.AddFactoryFacility();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            var factory = serviceProvider.GetRequiredService<IFactory<int, TestServiceOneParam<double>>>();
+            Func<IFactory<int, TestServiceOneParam<double>>> factory = () => serviceProvider.GetRequiredService<IFactory<int, TestServiceOneParam<double>>>();
 
-            factory.New(1).Arg.Should().Be(1);
-            factory.New(2).Arg.Should().Be(2);
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"In order to resolve a parameterised factory for service type '{typeof(TestServiceOneParam<double>)}', the implementation type '{typeof(TestServiceOneParam<double>)}' must contain a constructor whose last parameter is assignable from the factory argument type '{typeof(int)}'.");
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfOneArgOfInheritedType_ShouldResolve()
+        public void GetRequiredService_FactoryOfOneArgOfAssignableType_ShouldResolve()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<IEnumerable<string>>>();
@@ -194,6 +208,123 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             y.Arg3.Should().BeTrue();
         }
 
+        [Test]
+        public void GetRequiredService_FactoryOfOneArgForTypeWithNoConstructor_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<NoConstructor>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<IFactory<string, NoConstructor>> factory = () => serviceProvider.GetRequiredService<IFactory<string, NoConstructor>>();
+
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"In order to resolve a parameterised factory for service type '{typeof(NoConstructor)}', the implementation type '{typeof(NoConstructor)}' must contain a constructor whose last parameter is assignable from the factory argument type '{typeof(string)}'.");
+        }
+
+        [Test]
+        public void GetRequiredService_FactoryOfTwoArgsForTypeWithNoConstructor_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<NoConstructor>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<IFactory<string, double, NoConstructor>> factory = () => serviceProvider.GetRequiredService<IFactory<string, double, NoConstructor>>();
+
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"In order to resolve a parameterised factory for service type '{typeof(NoConstructor)}', the implementation type '{typeof(NoConstructor)}' must contain a constructor whose last 2 parameters are assignable from the factory argument types '{typeof(string)}', '{typeof(double)}'.");
+        }
+
+        [Test]
+        public void GetRequiredService_FactoryOfOneArgForTypeWithWrongConstructor_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<WrongConstructor>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<IFactory<string, WrongConstructor>> factory = () => serviceProvider.GetRequiredService<IFactory<string, WrongConstructor>>();
+
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"In order to resolve a parameterised factory for service type '{typeof(WrongConstructor)}', the implementation type '{typeof(WrongConstructor)}' must contain a constructor whose last parameter is assignable from the factory argument type '{typeof(string)}'.");
+        }
+
+        [Test]
+        public void GetRequiredService_FactoryOfTwoArgsForTypeWithWrongConstructor_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<WrongConstructor>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<IFactory<string, double, WrongConstructor>> factory = () => serviceProvider.GetRequiredService<IFactory<string, double, WrongConstructor>>();
+
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"In order to resolve a parameterised factory for service type '{typeof(WrongConstructor)}', the implementation type '{typeof(WrongConstructor)}' must contain a constructor whose last 2 parameters are assignable from the factory argument types '{typeof(string)}', '{typeof(double)}'.");
+        }
+
+        [Test]
+        public void New_FactoryOfOneArgWithMissingServices_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<WrongConstructor>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            var factory = serviceProvider.GetRequiredService<IFactory<int, WrongConstructor>>();
+
+            Func<WrongConstructor> instance = () => factory.New(1);
+
+            instance.Should().Throw<InvalidOperationException>()
+                .WithMessage($"Unable to resolve service for type '{typeof(double)}' while attempting to activate '{typeof(WrongConstructor)}'.");
+
+        }
+
+        [Test]
+        public void New_FactoryOfTwoArgWithMissingService_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<WrongConstructor>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            var factory = serviceProvider.GetRequiredService<IFactory<string, int, WrongConstructor>>();
+
+            Func<WrongConstructor> instance = () => factory.New("a", 1);
+
+            instance.Should().Throw<InvalidOperationException>()
+                .WithMessage($"Unable to resolve service for type '{typeof(double)}' while attempting to activate '{typeof(WrongConstructor)}'.");
+        }
+
+        [Test]
+        public void New_FactoryOfOneArgWithMissingSecondService_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<WrongConstructor>();
+            serviceCollection.AddSingleton(typeof(double), _ => 0);
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            var factory = serviceProvider.GetRequiredService<IFactory<int, WrongConstructor>>();
+
+            Func<WrongConstructor> instance = () => factory.New(1);
+
+            instance.Should().Throw<InvalidOperationException>()
+                .WithMessage($"Unable to resolve service for type '{typeof(string)}' while attempting to activate '{typeof(WrongConstructor)}'.");
+        }
+
+        private class WrongConstructor
+        {
+            public WrongConstructor(double a, string b, int c)
+            {
+            }
+        }
+
+        private class NoConstructor
+        {
+        }
+        
         private interface ITestInterfaceOneParam<out T>
         {
             T Arg { get; }
