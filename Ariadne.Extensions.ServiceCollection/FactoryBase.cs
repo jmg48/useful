@@ -11,7 +11,6 @@
         private readonly Type[] argTypes;
         private readonly Type implementationType;
         private readonly ConstructorInfo constructor;
-        private readonly ParameterInfo[] parameters;
 
         protected FactoryBase(IServiceProvider serviceProvider, ServiceMap serviceMap, Type[] argTypes)
         {
@@ -28,14 +27,15 @@
                     $"In order to resolve a parameterised factory for service type '{typeof(TService)}', the implementation type '{this.implementationType}' must be registered with Transient lifestyle.");
             }
 
-            this.constructor = this.implementationType.GetConstructors().Single();
-            this.parameters = this.constructor.GetParameters();
-            if (!IsMatch(this.constructor, argTypes))
+            var matchingConstructors = this.implementationType.GetConstructors().Where(constructorInfo => IsMatch(constructorInfo, argTypes)).ToList();
+            if (matchingConstructors.Count != 1)
             {
                 var argTypesText = string.Join(", ", argTypes.Select(argType => $"'{argType}'"));
                 throw new InvalidOperationException(
-                    $"In order to resolve a parameterised factory for service type '{typeof(TService)}', the implementation type '{this.implementationType}' must contain a constructor whose last {(argTypes.Length > 1 ? argTypes.Length + " parameters are assignable from the factory argument types" : "parameter is assignable from the factory argument type")} {argTypesText}.");
+                    $"In order to resolve a parameterised factory for service type '{typeof(TService)}', the implementation type '{this.implementationType}' must contain {(matchingConstructors.Count == 0 ? "a" : "just one")} constructor whose last {(argTypes.Length > 1 ? argTypes.Length + " parameters are assignable from the factory argument types" : "parameter is assignable from the factory argument type")} {argTypesText}.");
             }
+
+            this.constructor = matchingConstructors[0];
         }
 
         protected TService New(object[] argValues)
@@ -46,17 +46,18 @@
                 throw new NotSupportedException();
             }
 
-            var constructorArgs = new object[this.parameters.Length];
-            for (var i = 0; i < this.parameters.Length - this.argTypes.Length; i++)
+            var parameters = this.constructor.GetParameters();
+            var constructorArgs = new object[parameters.Length];
+            for (var i = 0; i < parameters.Length - this.argTypes.Length; i++)
             {
                 // n.b. Resolve services late, in order to respect lifestyles of resolved services
-                constructorArgs[i] = this.serviceProvider.GetService(this.parameters[i].ParameterType) ??
-                                     throw new InvalidOperationException($"Unable to resolve service for type '{this.parameters[i].ParameterType}' while attempting to activate '{this.implementationType}'.");
+                constructorArgs[i] = this.serviceProvider.GetService(parameters[i].ParameterType) ??
+                                     throw new InvalidOperationException($"Unable to resolve service for type '{parameters[i].ParameterType}' while attempting to activate '{this.implementationType}'.");
             }
 
-            for (var i = this.parameters.Length - this.argTypes.Length; i < this.parameters.Length; i++)
+            for (var i = parameters.Length - this.argTypes.Length; i < parameters.Length; i++)
             {
-                constructorArgs[i] = argValues[i - this.parameters.Length + this.argTypes.Length];
+                constructorArgs[i] = argValues[i - parameters.Length + this.argTypes.Length];
             }
 
             return (TService)this.constructor.Invoke(constructorArgs);

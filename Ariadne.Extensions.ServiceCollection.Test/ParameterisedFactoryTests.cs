@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
+using FluentAssertions.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
@@ -16,29 +17,44 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            Func<TestServiceTwoParams> factory = () => serviceProvider.GetRequiredService<TestServiceTwoParams>();
+            Func<TestServiceTwoParams<string, double>> factory = () => serviceProvider.GetRequiredService<TestServiceTwoParams<string, double>>();
 
             // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
             factory.Should().Throw<InvalidOperationException>()
-                .WithMessage($"No service for type '{typeof(TestServiceTwoParams)}' has been registered.");
+                .WithMessage($"No service for type '{typeof(TestServiceTwoParams<string, double>)}' has been registered.");
         }
 
         [Test]
         public void GetRequiredService_DependencyNotRegistered_ShouldThrow()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
-            serviceCollection.AddTransient<TestServiceTwoParams>();
+            serviceCollection.AddTransient<TestServiceTwoParams<string, double>>();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            Func<TestServiceTwoParams> factory = () => serviceProvider.GetRequiredService<TestServiceTwoParams>();
+            Func<TestServiceTwoParams<string, double>> factory = () => serviceProvider.GetRequiredService<TestServiceTwoParams<string, double>>();
 
             // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
             factory.Should().Throw<InvalidOperationException>()
-                .WithMessage($"Unable to resolve service for type '{typeof(string)}' while attempting to activate '{typeof(TestServiceTwoParams)}'.");
+                .WithMessage($"Unable to resolve service for type '{typeof(string)}' while attempting to activate '{typeof(TestServiceTwoParams<string, double>)}'.");
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfOneArgForRegisteredType_ShouldResolve()
+        public void GetRequiredService_NestedDependencyNotRegistered_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TestServiceOneParam<WrongConstructor>>();
+            serviceCollection.AddTransient<WrongConstructor>();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<TestServiceOneParam<WrongConstructor>> factory = () => serviceProvider.GetRequiredService<TestServiceOneParam<WrongConstructor>>();
+
+            // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"Unable to resolve service for type '{typeof(double)}' while attempting to activate '{typeof(WrongConstructor)}'.");
+        }
+
+        [Test]
+        public void New_FactoryOfOneArgForRegisteredType_ShouldSucceed()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<string>>();
@@ -52,7 +68,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfOneArgForRegisteredInterface_ShouldResolve()
+        public void New_FactoryOfOneArgForRegisteredInterface_ShouldSucceed()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<ITestInterfaceOneParam<string>, TestServiceOneParam<string>>();
@@ -136,7 +152,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfOneArgOfAssignableType_ShouldResolve()
+        public void New_FactoryOfOneArgOfAssignableType_ShouldSucceed()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceOneParam<IEnumerable<string>>>();
@@ -150,14 +166,14 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfTwoArgsForRegisteredType_ShouldResolve()
+        public void New_FactoryOfTwoArgsForRegisteredType_ShouldSucceed()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
-            serviceCollection.AddTransient<TestServiceTwoParams>();
+            serviceCollection.AddTransient<TestServiceTwoParams<string, double>>();
             serviceCollection.AddFactoryFacility();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            var factory = serviceProvider.GetRequiredService<IFactory<string, double, TestServiceTwoParams>>();
+            var factory = serviceProvider.GetRequiredService<IFactory<string, double, TestServiceTwoParams<string, double>>>();
 
             var x = factory.New("a", 1.0);
             x.Arg1.Should().Be("a");
@@ -169,14 +185,14 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfTwoArgsForRegisteredInterface_ShouldResolve()
+        public void New_FactoryOfTwoArgsForRegisteredInterface_ShouldSucceed()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
-            serviceCollection.AddTransient<ITestInterfaceTwoParams, TestServiceTwoParams>();
+            serviceCollection.AddTransient<ITestInterfaceTwoParams<string, double>, TestServiceTwoParams<string, double>>();
             serviceCollection.AddFactoryFacility();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            var factory = serviceProvider.GetRequiredService<IFactory<string, double, ITestInterfaceTwoParams>>();
+            var factory = serviceProvider.GetRequiredService<IFactory<string, double, ITestInterfaceTwoParams<string, double>>>();
 
             var x = factory.New("a", 1.0);
             x.Arg1.Should().Be("a");
@@ -188,7 +204,7 @@ namespace Ariadne.Extensions.ServiceCollection.Test
         }
 
         [Test]
-        public void GetRequiredService_FactoryOfThreeArgsForRegisteredType_ShouldResolve()
+        public void New_FactoryOfThreeArgsForRegisteredType_ShouldSucceed()
         {
             var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             serviceCollection.AddTransient<TestServiceThreeParams>();
@@ -314,6 +330,95 @@ namespace Ariadne.Extensions.ServiceCollection.Test
                 .WithMessage($"Unable to resolve service for type '{typeof(string)}' while attempting to activate '{typeof(WrongConstructor)}'.");
         }
 
+        [Test]
+        public void New_FactoryWithFactoryService_ShouldSucceed()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TestServiceTwoParams<IFactory<string, TestServiceOneParam<string>>, double>>();
+            serviceCollection.AddTransient<TestServiceOneParam<string>>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            var factory = serviceProvider.GetRequiredService<IFactory<double, TestServiceTwoParams<IFactory<string, TestServiceOneParam<string>>, double>>>();
+
+            var instance = factory.New(1);
+            instance.Arg2.Should().Be(1);
+
+            var instance2 = factory.New(2);
+            instance2.Arg2.Should().Be(2);
+
+            var factory2 = instance.Arg1;
+
+            var instance3 = factory2.New("a");
+            instance3.Arg.Should().Be("a");
+
+            var instance4 = factory2.New("b");
+            instance4.Arg.Should().Be("b");
+        }
+
+        [Test]
+        public void GetRequiredService_TwoConstructorsServicesRegisteredForNeither_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TwoConstructors>();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<TwoConstructors> factory = () => serviceProvider.GetRequiredService<TwoConstructors>();
+
+            // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"No constructor for type '{typeof(TwoConstructors)}' can be instantiated using services from the service container and default values.");
+        }
+
+        [Test]
+        public void GetRequiredService_TwoConstructorsServicesRegisteredForOne_ShouldSucceed()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TwoConstructors>();
+            serviceCollection.AddSingleton(typeof(string), "a");
+            serviceCollection.AddSingleton(typeof(int), 1);
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
+            var instance = serviceProvider.GetRequiredService<TwoConstructors>();
+            instance.A.Should().Be("a");
+            instance.B.Should().Be(1);
+        }
+
+        [Test]
+        public void GetRequiredService_TwoConstructorsServicesRegisteredForBoth_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TwoConstructors>();
+            serviceCollection.AddSingleton(typeof(string), "a");
+            serviceCollection.AddSingleton(typeof(int), 1);
+            serviceCollection.AddSingleton(typeof(DateTime), 15.June(1980));
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<TwoConstructors> factory = () => serviceProvider.GetRequiredService<TwoConstructors>();
+
+            // This is actually checking already built-in behaviour, but illustrates the kind of exception thrown which we want to align with here
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($@"Unable to activate type '{typeof(TwoConstructors)}'. The following constructors are ambigious:
+Void .ctor(System.String, Int32)
+Void .ctor(System.DateTime, Int32)");
+        }
+        
+        [Test]
+        public void GetRequiredService_FactoryOfOneArgForTypeWithTwoMatchingConstructors_ShouldThrow()
+        {
+            var serviceCollection = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+            serviceCollection.AddTransient<TwoConstructors>();
+            serviceCollection.AddFactoryFacility();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            Func<IFactory<int, TwoConstructors>> factory = () => serviceProvider.GetRequiredService<IFactory<int, TwoConstructors>>();
+
+            factory.Should().Throw<InvalidOperationException>()
+                .WithMessage($"In order to resolve a parameterised factory for service type '{typeof(TwoConstructors)}', the implementation type '{typeof(TwoConstructors)}' must contain just one constructor whose last parameter is assignable from the factory argument type '{typeof(int)}'.");
+        }
+
+
         private class WrongConstructor
         {
             public WrongConstructor(double a, string b, int c)
@@ -323,6 +428,29 @@ namespace Ariadne.Extensions.ServiceCollection.Test
 
         private class NoConstructor
         {
+        }
+
+        private class TwoConstructors
+        {
+            public TwoConstructors(string a, int b)
+            {
+                A = a;
+                B = b;
+            }
+
+            public TwoConstructors(DateTime c, int d)
+            {
+                C = c;
+                D = d;
+            }
+            
+            public string A { get; }
+ 
+            public int B { get; }
+            
+            public DateTime C { get; }
+            
+            public int D { get; }
         }
         
         private interface ITestInterfaceOneParam<out T>
@@ -337,24 +465,24 @@ namespace Ariadne.Extensions.ServiceCollection.Test
             public T Arg { get; }
         }
 
-        private interface ITestInterfaceTwoParams
+        private interface ITestInterfaceTwoParams<out T1, out T2>
         {
-            string Arg1 { get; }
+            T1 Arg1 { get; }
 
-            double Arg2 { get; }
+            T2 Arg2 { get; }
         }
 
-        private class TestServiceTwoParams : ITestInterfaceTwoParams
+        private class TestServiceTwoParams<T1, T2> : ITestInterfaceTwoParams<T1, T2>
         {
-            public TestServiceTwoParams(string arg1, double arg2)
+            public TestServiceTwoParams(T1 arg1, T2 arg2)
             {
                 Arg1 = arg1;
                 Arg2 = arg2;
             }
 
-            public string Arg1 { get; }
+            public T1 Arg1 { get; }
 
-            public double Arg2 { get; }
+            public T2 Arg2 { get; }
         }
 
         private class TestServiceThreeParams
