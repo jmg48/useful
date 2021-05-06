@@ -1,0 +1,33 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+trigger:
+  branches:
+    include:
+    - feature/*
+pool:
+  vmImage: 'windows-latest'
+variables:
+  solution: '**/*.sln'
+  buildConfiguration: 'Release'  
+steps:
+- task: NuGetToolInstaller@1
+# Restore from feed(s) set in nuget.config
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
+    feedsToUse: 'config'
+    nugetConfigPath: 'nuget.config'
+- task: MSBuild@1
+  inputs:
+    solution: '$(solution)'
+    configuration: '$(buildConfiguration)'
+    clean: true
+# Push a project
+- task: NuGetCommand@2
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
+    feedsToUse: 'config'
+    nugetConfigPath: '$(Build.WorkingDirectory)/NuGet.config'
